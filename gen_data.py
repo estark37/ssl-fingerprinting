@@ -10,7 +10,7 @@ from random import choice, randint
 #         "http://go.com", "http://msn.com", "http://bing.com", "http://espn.go.com", "http://cnn.com",
 #         "http://apple.com", "http://paypal.com", "http://aol.com"]
 
-sites = ["https://encrypted.google.com", "https://www.facebook.com", "https://twitter.com"],
+sites = ["https://encrypted.google.com", "https://www.facebook.com", "https://twitter.com",
          "https://www.bankofamerica.com", "https://online.citibank.com", "https://www.box.net",
          "https://www.dropbox.com", "https://www.torproject.org"]
 
