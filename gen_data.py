@@ -24,7 +24,7 @@ def close_browser(browser):
     browser.terminate()
 
 def start_tcpdump(name):
-    child = subprocess.Popen("tcpdump -i en1 -w %s port 443"%name, shell=True)
+    child = subprocess.Popen("tcpdump -i en1 -w %s port 80 or port 443"%name, shell=True)
     return child
 
 def end_tcpdump(dump):
