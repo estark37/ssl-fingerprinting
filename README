@@ -1,2 +1,3 @@
-> rm -r tmp_preprocess
-> python preprocess.py data/single_visits 18.189.105.77
+> mkdir data/feature_vectors/single_vists
+> python preprocess.py data/single_visits 18.189.105.77 data/feature_vectors/single_visits
+> python run_svm.py data/feature_vectors/single_visits 3 encrypted.google.com

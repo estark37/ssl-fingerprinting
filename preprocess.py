@@ -1,17 +1,17 @@
 import os, sys, time, shutil, subprocess
 from dateutil import parser
+import json
 
 def main():
     input_dir = sys.argv[1]
     data_src = sys.argv[2]
+    output_dir = sys.argv[3]
     input_files = os.listdir(input_dir)
-
-    print input_files
 
     # Some place to put the tcpdump-d raw input files
     try:
         shutil.rmtree("tmp_preprocess")
-    except Error:
+    except:
         print "No directory to delete"
     os.mkdir("tmp_preprocess")
     
@@ -42,9 +42,13 @@ def main():
             length = int(fields[-1])
 
             feature_vector = feature_vector + [tdelta, forwards, length]
+        f.close()
         print "Feature vector for %s (length %s)"%(input, len(feature_vector))
         print feature_vector
 
+        out = open("%s/%s"%(output_dir, input), mode="w+")
+        out.write(json.dumps(feature_vector))
+        out.close()
 
 main()
     

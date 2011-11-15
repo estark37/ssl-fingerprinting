@@ -63,9 +63,9 @@ def generate_data(bg_visit, data_root):
 
 load_bg_sites()
 # single visit data
-generate_data(False, "data/single_visits/")
+#generate_data(False, "data/single_visits/")
 # multiple visits data
-#generate_data(True, "data/mult_visits/")
+generate_data(True, "data/mult_visits/")
 
 
 
