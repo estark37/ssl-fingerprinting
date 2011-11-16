@@ -3,52 +3,66 @@ import sys
 from sklearn import svm
 import os
 
-def load_feature_vectors(input_dir, exclude_sample, target_site):
+def load_feature_vectors(input_dir, num_samples_per_site, target_sites):
     X = []
     Y = []
-    input_files = os.listdir(input_dir)
+    testX = []
+    testY = []
 
-    for f in input_files:
-        # leave one out for training
-        print "Loading feature vector for %s"%f
-        exclude = False
-        if f.find(target_site) == -1:
-            Y.append(0)
-        else:
-            if f.find("%s_%d"%(target_site, exclude_sample)) != -1:
-                exclude = True
+    for i in range(num_samples_per_site/2):
+        for site in target_sites:
+            print "Loading feature vector for %s_%d.dat"%(site, i)
+            if site == target_sites[0]:
+                Y.append(0)
             else:
                 Y.append(1)
 
-        inp = open("%s/%s"%(input_dir, f))
-        feature_vector = json.loads(inp.read())
-        inp.close()
-        if not exclude:
+            inp = open("%s/%s_%d.dat"%(input_dir, site, i))
+            feature_vector = json.loads(inp.read())
+            inp.close()
             X.append(feature_vector)
-        else:
-            test = feature_vector
+
+    for i in range(num_samples_per_site/2, num_samples_per_site):
+        for site in target_sites:
+            print "Loading test vector for %s_%d.dat"%(site, i)
+            if site == target_sites[0]:
+                testY.append(0)
+            else:
+                testY.append(1)
+
+            inp = open("%s/%s_%d.dat"%(input_dir, site, i))
+            feature_vector = json.loads(inp.read())
+            inp.close()
+            testX.append(feature_vector)
 
     # Pad every row of X with -1s
-    max_len = max(map(lambda v: len(v), X))
-    X = map(lambda v: v + ([-1] * (max_len - len(v))), X)        
-    test.extend([-1] * (max_len - len(test)))
+    max_len = max(map(lambda v: len(v), X) + map(lambda v: len(v), testX))
+    X = map(lambda v: v + ([-1] * (max_len - len(v))), X)
+    testX = map(lambda v: v + ([-1] * (max_len - len(v))), testX)
 
-    return X, Y, test
+    return X, Y, testX, testY
     
 
 def main():
     input_dir = sys.argv[1]
     num_samples_per_site = int(sys.argv[2])
-    target_site = sys.argv[3]
+    target_site1 = sys.argv[3]
+    target_site2 = sys.argv[4]
 
-    X, Y, test = load_feature_vectors(input_dir, num_samples_per_site-1, target_site)
+    X, Y, testX, testY = load_feature_vectors(input_dir, num_samples_per_site, [target_site1, target_site2])
 
-    clf = svm.SVC()
+    clf = svm.SVC(kernel='linear')
     clf.fit(X, Y)
 
-    # Test on the example we left out
-    print "Testing on:"
-    print test
-    print clf.predict(test)
+    correct = 0
+    predictions = []
+    for ind, test in enumerate(testX):
+        result = clf.predict(test)[0]
+        predictions.append(result)
+        if result == testY[ind]:
+            correct = correct + 1
+
+    print "Num correct: %d"%correct
+        
 
 main()
