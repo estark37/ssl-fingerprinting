@@ -2,6 +2,7 @@ import json
 import sys
 from sklearn import svm
 import os
+from random import randint
 
 def load_feature_vectors(input_dir, num_samples_per_site, target_sites):
     X = []
@@ -9,33 +10,32 @@ def load_feature_vectors(input_dir, num_samples_per_site, target_sites):
     testX = []
     testY = []
 
-    for i in range(num_samples_per_site/2):
-        for site in target_sites:
-#            print "Loading feature vector for %s_%d.dat"%(site, i)
-            if site == target_sites[0]:
-                Y.append(0)
-            else:
-                Y.append(1)
+    train_samples = []
+    while len(train_samples) < num_samples_per_site / 2:
+        next = randint(0, num_samples_per_site - 1)
+        if not (next in train_samples):
+            train_samples.append(next)
 
+    for i in range(num_samples_per_site):
+        for site in target_sites:
+            if i in train_samples:
+                useY = Y
+                useX = X
+            else:
+                useY = testY
+                useX = testX
+            if site == target_sites[0]:
+                useY.append(0)
+            else:
+                useY.append(1)
+            
             inp = open("%s/%s_%d.dat"%(input_dir, site, i))
             feature_vector = json.loads(inp.read())
             inp.close()
-            X.append(feature_vector)
+            useX.append(feature_vector)
 
-    for i in range(num_samples_per_site/2, num_samples_per_site):
-        for site in target_sites:
-#            print "Loading test vector for %s_%d.dat"%(site, i)
-            if site == target_sites[0]:
-                testY.append(0)
-            else:
-                testY.append(1)
-
-            inp = open("%s/%s_%d.dat"%(input_dir, site, i))
-            feature_vector = json.loads(inp.read())
-            inp.close()
-            testX.append(feature_vector)
-
-    # Pad every row of X with -1s
+    # Pad every row of X with -1s to the maximum length of any row
+    # (All feature vectors have to be the same length)
     max_len = max(map(lambda v: len(v), X) + map(lambda v: len(v), testX))
     X = map(lambda v: v + ([-1] * (max_len - len(v))), X)
     testX = map(lambda v: v + ([-1] * (max_len - len(v))), testX)
