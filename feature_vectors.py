@@ -1,6 +1,7 @@
 import os
 from sklearn import preprocessing
 import json
+from random import sample
 
 def load_feature_vectors(input_dir, num_samples_per_site, labels):
     X = []
