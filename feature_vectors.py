@@ -1,6 +1,7 @@
 import os
-from sklearn import preprocessing
+#from sklearn import preprocessing
 import json
+from random import sample
 
 def load_feature_vectors(input_dir, num_samples_per_site, labels):
     X = []
@@ -20,7 +21,7 @@ def load_feature_vectors(input_dir, num_samples_per_site, labels):
     # Pad every row of X with -1s to the maximum length of any row
     # (All feature vectors have to be the same length)
     max_len = max(map(lambda v: len(v), X))
-    X = map(lambda v: v + ([0] * (max_len - len(v))), X)
+    X = map(lambda v: v + ([-1] * (max_len - len(v))), X)
 
     return X, Y
 
