@@ -1,7 +1,8 @@
 import sys
 from sklearn import svm
 import os
-from feature_vectors import scale, load_feature_vectors, select_test_set
+from feature_vectors import (scale, load_feature_vectors, select_test_set,
+get_target_sites)
 
 def main():
     input_dir = sys.argv[1]
