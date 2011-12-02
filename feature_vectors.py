@@ -25,15 +25,18 @@ def load_feature_vectors(input_dir, num_samples_per_site, labels):
 
     return X, Y
 
-def scale(X, testX):
+def scale(X, testX = None):
     newX = map(lambda l: map(lambda x: x*1.0, l), X)
-    newTestX = map(lambda l: map(lambda x: x*1.0, l), testX)
+    if testX is not None:
+        newTestX = map(lambda l: map(lambda x: x*1.0, l), testX)
 
     scalerX = preprocessing.Scaler().fit(newX)
     newX = scalerX.transform(newX)
-    newTestX = scalerX.transform(newTestX)
+    if testX is not None:
+        newTestX = scalerX.transform(newTestX)
+        return newX, newTestX
 
-    return newX, newTestX
+    return newX
 
 def select_test_set(X, Y, n_test):
     tests = sample(range(len(Y)), n_test)
