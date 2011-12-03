@@ -2,34 +2,50 @@ from cvxopt import solvers
 import cvxopt
 from numpy import *
 
-def SVM_fit(X, Y, k):
+def SVM_classify(x, thetas, bs):
+    ys = []
+    for (i, (theta, b)) in enumerate(zip(thetas, bs)):
+        ys.append((dot(matrix(x), theta) + b, i))
+
+    return (max(ys))[1]
+
+def SVM_fit(X, Y, k, c = 1.0):
     n = len(Y) # number of samples
     d = len(X[0]) # number of features
+
+    print "n: %d, d: %d, k: %d"%(n,d,k)
+
     # k = number of classes
 
     # The solver solves:
     # min 1/2 xPx + qx subject to h >= Gx
-    # We set x = [theta_1 || theta_2 || ... || theta_k]
+    # We set x = [theta_1 || theta_2 || ... || theta_k ||
+    #     slack_1 || ... || slack_n]
     # (each theta has an extra feature for an intercept)
     #
-    # P = I, q = [0, ..., 0]
+    # The top block of P is I. The bottom block is 0's.
+    # q = [0, ..., 0, c, ..., c]
     # h = [-1, ..., -1]
     #
     # G is the matrix that enforces the constraints:
     # for all i:
-    # theta^(yi).x^i >= theta^(yj).x^i + 1 for all j != i
+    # theta^(yi).x^i >= theta^(yj).x^i + 1 - slack_i for all j != i
     #
-    # P is k(d+1) x k(d+1)
+    # P is k(d+1)+n x k(d+1)+n
 
-    P = zeros((k*(d+1), k*(d+1)))
+    P = zeros((k*(d+1)+n, k*(d+1)+n))
     for i in range(0, k*(d+1)):
         P[i, i] = 1.0
-    q = zeros((k*(d+1), 1))
-    h = zeros((n*(n-1), 1))
-    for i in range(n*(n-1)):
-        h[i, 0] = -1
 
-    G = zeros((n*(n-1), k*(d+1)))
+    q = zeros((k*(d+1) + n, 1))
+    for i in range(n):
+        q[k*(d+1) + i] = c
+
+    h = zeros((n*(n-1) + n, 1))
+    for i in range(n*(n-1)):
+        h[i, 0] = -1.0
+
+    G = zeros((n*(n-1) + n, k*(d+1) + n))
     next_row = 0
     for i in range(n):
         for j in range(n):
@@ -43,7 +59,14 @@ def SVM_fit(X, Y, k):
                 for m in range(d+1):
                     G[next_row, yi * (d+1) + m] = -xi[m]
                     G[next_row, yj * (d+1) + m] = xi[m]
+                
+                G[next_row, k*(d+1) + i] = -1.0
                 next_row = next_row + 1
+
+    # The final rows of G enforces that slacks are nonnegative
+    for i in range(n):
+        G[next_row, k*(d+1) + i] = -1.0
+        next_row = next_row + 1
 
     sol = solvers.qp(cvxopt.matrix(P), cvxopt.matrix(q),
                      cvxopt.matrix(G),
@@ -56,4 +79,4 @@ def SVM_fit(X, Y, k):
         thetas.append(sol['x'][i * (d+1) : i * (d+1) + d])
         bs.append(sol['x'][i * (d+1) + d])
                 
-    return thetas, bs
+    return thetas, bs, sol['x'][-n:]

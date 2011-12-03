@@ -3,7 +3,7 @@ from sklearn.decomposition import PCA
 from feature_vectors import(scale, load_feature_vectors, get_target_sites,
 select_test_set)
 from one_v_one_svm import classify
-from multiclass_svm import SVM_fit
+from multiclass_svm import SVM_fit, SVM_classify
 
 def main():
     input_dir = sys.argv[1]
@@ -25,12 +25,21 @@ def main():
     Xnew = pca.transform(X)
     testXnew = pca.transform(testX)
 
+    X, testX = scale(Xnew, testXnew)
+
     #print "Classifying with a one vs one SVM"
 
     #classify(Xnew, Y, testXnew, testY, 0.002)
 
     print "Classifying with a multiclass SVM"
 
-    thetas, bs = SVM_fit(Xnew, Y, len(labels))
+    thetas, bs, slacks = SVM_fit(X, Y, len(labels), 15.0)
+
+    num_correct = 0
+    for (i, x) in enumerate(testX):
+        if (SVM_classify(x, thetas, bs) == testY[i]):
+            num_correct = num_correct + 1
+
+    print "Num correct: %d/%d"%(num_correct, len(testY))
 
 main()
