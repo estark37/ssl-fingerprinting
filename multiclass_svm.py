@@ -53,7 +53,7 @@ def SVM_fit(X, Y, k, c = 1.0):
                 xi = []
                 for f in X[i]:
                     xi.append(f)
-                xi.append(1)
+                xi.append(1.0)
                 yi = Y[i]
                 yj = Y[j]
                 for m in range(d+1):

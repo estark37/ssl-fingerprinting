@@ -11,7 +11,6 @@ def classify(X, Y, testX, testY, c=1.0):
     correct = 0
     for ind, test in enumerate(testX):
         result = clf.predict(test)[0]
-        print "Prediction: %f, real label: %f"%(result, testY[ind])
         if result == testY[ind]:
             correct = correct + 1
     
