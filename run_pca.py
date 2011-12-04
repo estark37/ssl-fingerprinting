@@ -2,7 +2,7 @@ import sys
 from sklearn.decomposition import PCA
 from feature_vectors import(scale, load_feature_vectors, get_target_sites,
 select_test_set)
-from one_v_one_svm import classify
+from multiclass_on_binary_svm import classify
 from multiclass_svm import SVM_fit, SVM_classify
 from anomaly_detection import AnomDet_fit, AnomDet_classify, rbf
 
@@ -13,26 +13,7 @@ def translate(translateDims, X):
                             xi + translateDims[i], enumerate(x)))
     return Xnew
 
-def main():
-    input_dir = sys.argv[1]
-    num_samples_per_site = int(sys.argv[2])
-    target_sites = get_target_sites(input_dir)
-
-    labels = dict(map(lambda (i, s): (s, i), enumerate(target_sites)))
-    X, Y = load_feature_vectors(input_dir, num_samples_per_site, labels)
-    X, Y, testX, testY = select_test_set(X, Y,
-                           (num_samples_per_site / 2) * len(target_sites))
-    Y = map(lambda v: v*1.0, Y)
-    testY = map(lambda v: v*1.0, testY)
-
-    pca = PCA(n_components = 50)
-
-    print "Fitting X"
-    pca.fit(X)
-
-    print "Transforming X and testX"
-    Xnew = pca.transform(X)
-    testXnew = pca.transform(testX)
+def anomaly_detection(labels, Xnew, Y, testXnew, testY):
 
     print "Anomaly detection"
 
@@ -72,7 +53,8 @@ def main():
         print "Test class %d. Normal correct: %d/%d, anomaly correct: %d/%d"%(
             test_class, num_correct[0], predictions[0], num_correct[1],
             predictions[1])
-    
+
+def multiclass_svm(Xnew, testXnew, Y, testY, labels):
     print "Classifying with a multiclass SVM"
 
     Xnew, testXnew = scale(Xnew, testXnew)
@@ -86,9 +68,44 @@ def main():
 
     print "Num correct: %d/%d"%(num_correct, len(testY))
 
+def multiclass_on_binary_svms(Xnew, Y, testXnew, testY):
 
     print "Classifying with a one vs one SVM"
+    classify(Xnew, Y, testXnew, testY, True, 0.2)
 
-    classify(Xnew, Y, testXnew, testY, 0.2)
+    print "Classifying with a one vs all SVM"
+    classify(Xnew, Y, testXnew, testY, False, 0.2)
+
+def main():
+    cmd = sys.argv[3]
+    input_dir = sys.argv[1]
+    num_samples_per_site = int(sys.argv[2])
+    target_sites = get_target_sites(input_dir)
+
+    labels = dict(map(lambda (i, s): (s, i), enumerate(target_sites)))
+    X, Y = load_feature_vectors(input_dir, num_samples_per_site, labels)
+    X, Y, testX, testY = select_test_set(X, Y,
+                           (num_samples_per_site / 2) * len(target_sites))
+    Y = map(lambda v: v*1.0, Y)
+    testY = map(lambda v: v*1.0, testY)
+
+    pca = PCA(n_components = 50)
+
+    print "Fitting X"
+    pca.fit(X)
+
+    print "Transforming X and testX"
+    Xnew = pca.transform(X)
+    testXnew = pca.transform(testX)
+
+    del X
+    del testX
+
+    if cmd == "monb":
+        multiclass_on_binary_svms(Xnew, Y, testXnew, testY)
+    elif cmd == "multiclass":
+        multiclass_svm(Xnew, testXnew, Y, testY, labels)
+    elif cmd == "anomdet":
+        anomaly_detection(labels, Xnew, Y, testXnew, testY)
 
 main()
