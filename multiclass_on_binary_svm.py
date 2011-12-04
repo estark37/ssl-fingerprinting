@@ -4,8 +4,12 @@ import os
 from feature_vectors import (scale, load_feature_vectors, select_test_set,
 get_target_sites)
 
-def classify(X, Y, testX, testY, c=1.0):
-    clf = svm.SVC(kernel = 'linear', C=c)
+def classify(X, Y, testX, testY, onevone = True, c=1.0):
+    if onevone:
+        clf = svm.SVC(kernel = 'linear', C=c)
+    else:
+        clf = svm.sparse.LinearSVC(C=c)
+
     clf.fit(X, Y)
 
     correct = 0
@@ -16,7 +20,7 @@ def classify(X, Y, testX, testY, c=1.0):
     
     print "Num correct: %d/%d"%(correct, len(testY))    
 
-def run(input_dir, num_samples_per_site):
+def run(input_dir, num_samples_per_site, onevone = True):
     input_dir = sys.argv[1]
     num_samples_per_site = int(sys.argv[2])
 
@@ -29,4 +33,4 @@ def run(input_dir, num_samples_per_site):
 
     X, testX = scale(X, testX)
 
-    classify(X, Y, testX, testY, 0.002)
+    classify(X, Y, testX, testY, onevone, 0.002)

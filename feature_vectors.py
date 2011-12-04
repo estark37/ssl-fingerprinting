@@ -38,6 +38,24 @@ def scale(X, testX = None):
 
     return newX
 
+def select_cross_validation_subsets(X, Y, num_subsets):
+    if len(Y) % num_subsets != 0:
+        return []
+
+    size = len(Y) / num_subsets
+    subsetsX = []
+    subsetsY = []
+    choosable = set(range(len(Y)))
+    
+    for i in range(num_subsets):
+        subset = sample(choosable, size)
+        for j in subset:
+            choosable.remove(j)
+        subsetsX.append(map(lambda x: X[x], subset))
+        subsetsY.append(map(lambda y: Y[y], subset))
+
+    return subsetsX, subsetsY
+
 def select_test_set(X, Y, n_test):
     tests = sample(range(len(Y)), n_test)
     print "test samples:"

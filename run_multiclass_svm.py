@@ -4,6 +4,8 @@ from feature_vectors import (scale, load_feature_vectors, select_test_set,
 get_target_sites)
 from multiclass_svm import SVM_fit, SVM_classify
 
+# NOTE: this file is outdated, was just used for testing purposes
+
 def main():
     input_dir = sys.argv[1]
     num_samples_per_site = int(sys.argv[2])
