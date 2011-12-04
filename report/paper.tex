@@ -1,0 +1,36 @@
+\documentclass[10pt, twocolumn]{article}
+\usepackage[margin=1in]{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Analyzing Encrypted Web Traffic with Single- and Multi-Class SVMs}
+\author{Emily Stark}
+\date{\today}                                          % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+%\section{}
+%\subsection{}
+
+\section{Introduction}
+Web users, especially those in regions with censored 
+Internet access, often use encryption in conjunction 
+with anonymizing proxies to conceal which website 
+they are visiting. For example, a user whose government 
+restricts access to \texttt{www.facebook.com} can choose a 
+proxy in an uncensored region, and use that proxy to 
+forward encrypted HTTP requests and responses to and 
+from Facebook. In theory, the censoring entity cannot determine from 
+the user's encrypted traffic that the user is visiting 
+Facebook. However, encryption does not conceal the direction, 
+size, and timing of the packets that a user's web browsing 
+generates. In practice, this small amount of information can 
+be enough to determine the website that the user is visiting.
+
+
+\end{document}  
