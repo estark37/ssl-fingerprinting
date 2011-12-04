@@ -12,7 +12,7 @@ from random import choice, randint
 
 sites = ["https://encrypted.google.com", "https://www.facebook.com", "https://twitter.com",
          "https://www.bankofamerica.com", "https://online.citibank.com", "https://www.box.net",
-         "https://www.dropbox.com", "https://www.torproject.org"][6:]
+         "https://www.dropbox.com", "https://www.torproject.org"]
 
 bg_sites = []
 

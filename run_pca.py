@@ -1,4 +1,7 @@
 import sys
+import shutil
+import os
+import json
 from sklearn.decomposition import PCA
 from feature_vectors import(scale, load_feature_vectors, get_target_sites,
 select_test_set)
@@ -59,12 +62,36 @@ def multiclass_svm(Xnew, testXnew, Y, testY, labels):
 
     Xnew, testXnew = scale(Xnew, testXnew)
 
-    thetas, bs, slacks = SVM_fit(Xnew, Y, len(labels), 0.05)
+    try:
+        shutil.rmtree("tmp_x")
+    except:
+        print "No tmp directory to delete"
+    os.mkdir("tmp_x")
+    out = open("tmp_x/x.dat", mode="w+")
+    for x in Xnew:
+        out.write(json.dumps(x.tolist()))
+        out.write("\n")
+    out.close()
+    out = open("tmp_x/xtest.dat", mode="w+")
+    for x in testXnew:
+        out.write(json.dumps(x.tolist()))
+        out.write("\n")
+    out.close()
+
+    d = len(Xnew[0])
+    del Xnew
+    del testXnew
+
+    thetas, bs, slacks = SVM_fit("tmp_x/x.dat", Y, len(labels), d, 0.05)
 
     num_correct = 0
-    for (i, x) in enumerate(testXnew):
+    tests = open("tmp_x/xtest.dat")
+    i = 0
+    for l in tests:
+        x = json.loads(l)
         if (SVM_classify(x, thetas, bs) == testY[i]):
             num_correct = num_correct + 1
+        i = i + 1
 
     print "Num correct: %d/%d"%(num_correct, len(testY))
 
