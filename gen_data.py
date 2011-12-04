@@ -12,11 +12,11 @@ from random import choice, randint
 
 sites = ["https://encrypted.google.com", "https://www.facebook.com", "https://twitter.com",
          "https://www.bankofamerica.com", "https://online.citibank.com", "https://www.box.net",
-         "https://www.dropbox.com", "https://www.torproject.org"]
+         "https://www.dropbox.com", "https://www.torproject.org"][6:]
 
 bg_sites = []
 
-num_visits = 30
+num_visits = 60
 
 def open_browser():
     child = subprocess.Popen("/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome about:blank --incognito", shell=True)
@@ -45,6 +45,7 @@ def load_bg_sites():
 
 def generate_data(bg_visit, data_root):
     for site in sites:
+        print "Site: %s"%site
         for i in range(num_visits):
             dump = start_tcpdump("%s%s_%d.dat"%(data_root, site.split("//")[1], i))
             browser = open_browser()
@@ -61,13 +62,13 @@ def generate_data(bg_visit, data_root):
                 if (bg_visit):
                     open_new_tab("http://%s"%bg)
                 sys.exit()
-            time.sleep(3)
+            time.sleep(6)
 
 load_bg_sites()
 # single visit data
-generate_data(False, "data/single_visits/")
+#generate_data(False, "data/single_visits/")
 # multiple visits data
-#generate_data(True, "data/mult_visits/")
+generate_data(True, "data/mult_visits/")
 
 
 
