@@ -7,6 +7,14 @@ import json
 import shutil
 import sys
 from multiclass_svm import SVM_fit, SVM_classify
+from anomaly_detection import AnomDet_fit, AnomDet_classify, rbf
+
+def translate(translateDims, X):
+    Xnew = []
+    for x in X:
+        Xnew.append(map(lambda (i, xi):
+                            xi + translateDims[i], enumerate(x)))
+    return Xnew
 
 # nb is number of blocks to divide each packet trace into
 # e is measured in bytes
@@ -103,12 +111,16 @@ def reduce(X_multi, X_single, n_features, nb, e):
 
 def multiclass_svm_crossvalidate(X, Y, labels, c):
     iters = select_cross_validation_subsets(X, Y, 6)
-    for d in iters:
-        X = d["train"][0]
-        Y = d["train"][1]
-        testX = d["test"][0]
-        testY = d["test"][1]
-        multiclass_svm(X, Y, testX, testY, labels, c)
+    crange = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1,
+              1.0, 10.0, 100.0, 1000.0]
+    for c in crange:
+        print "C=%f"%c
+        for d in iters:
+            X = d["train"][0]
+            Y = d["train"][1]
+            testX = d["test"][0]
+            testY = d["test"][1]
+            multiclass_svm(X, Y, testX, testY, labels, c)
 
         
 def multiclass_svm(X, Y, testX, testY, labels, c=1.0):
@@ -137,11 +149,75 @@ def multiclass_svm_test(X, Y, labels, c, ntests):
     X, Y, testX, testY = select_test_set(X, Y, ntests)
     multiclass_svm(X, Y, testX, testY, labels, c)
 
+def monb_crossvalidate(X, Y, c, onevone):
+    iters = select_cross_validation_subsets(X, Y, 6)
+    #crange = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1,
+    #          1.0, 10.0, 100.0, 1000.0]
+    crange = [1.0]
+    for c in crange:
+        print "C=%f"%c
+        for d in iters:
+            X = d["train"][0]
+            Y = d["train"][1]
+            testX = d["test"][0]
+            testY = d["test"][1]
+            classify(X, Y, testX, testY, onevone, c)
+
 def monb_test(X, Y, c, onevone, ntest):
     X, Y, testX, testY = select_test_set(X, Y, ntest)
     Y = map(lambda v: v*1.0, Y)
     classify(X, Y, testX, testY, onevone, c)
 
+def anom_det_crossvalidate(labels, X, Y, v):
+    iters = select_cross_validation_subsets(X, Y, 6)
+    for d in iters:
+        X = d["train"][0]
+        Y = d["train"][1]
+        testX = d["test"][0]
+        testY = d["test"][1]
+        _anom_det_test(labels, X, Y, testX, testY, v)
+
+def _anom_det_test(labels, X, Y, testX, testY, v):
+    for test_class in range(len(labels)):
+        anomX = []
+        for (i, x) in enumerate(X):
+            if Y[i] == test_class:
+                anomX.append(x)
+
+        minD = []
+        # Translate so all coordinates are positive
+        for d in range(len(anomX[0])):
+            minD.append(min(map(lambda x: x[d], anomX)))
+
+        anomX = translate(minD, anomX)
+        anomX = scale(anomX)
+        rho, alphas = AnomDet_fit(anomX, v, rbf)
+
+        test = testX
+        test = translate(minD, test)
+        test = scale(test)
+        num_correct = [0, 0]
+        predictions = [0, 0]
+
+        for (i, x) in enumerate(test):
+            classify = AnomDet_classify(x, alphas, rho, anomX, rbf)
+            if testY[i] == test_class:
+                predictions[0] = predictions[0] + 1
+                if classify == 0.0:
+                    num_correct[0] = num_correct[0] + 1
+            else:
+                predictions[1] = predictions[1] + 1
+                if classify != 0.0:
+                    num_correct[1] = num_correct[1] + 1
+
+        print "Test class %d. Normal correct: %d/%d, anomaly correct: %d/%d"%(
+            test_class, num_correct[0], predictions[0], num_correct[1],
+            predictions[1])
+
+def anom_det_test(labels, X, Y, v, ntest):
+    X, Y, testX, testY = select_test_set(X, Y, ntest)
+    _anom_det_test(labels, X, Y, testX, testY, v)
+    
 def main():
     cmd = sys.argv[5]
     sinput_dir = sys.argv[1]
@@ -180,6 +256,20 @@ def main():
         print "Reduced dimensionality"
         Xm = reduce(Xm, Xs, d, nb, e)
         monb_test(Xm, Ym, c, True, nmsamples*len(labels) / 2)
+    elif cmd == "onevone-crossvalidate":
+        c = 1.0
+        d = 110
+        nb = 15
+        e = 100
+        Xm = reduce(Xm, Xs, d, nb, e)
+        monb_crossvalidate(Xm, Ym, c, True)
+    elif cmd == "onevall-crossvalidate":
+        c = 1.0
+        d = 50
+        nb = 15
+        e = 100
+        Xm = reduce(Xm, Xs, d, nb, e)
+        monb_crossvalidate(Xm, Ym, c, False)
     elif cmd == "onevall-test":
         c = 1.0
         print "Original dimensionality"
@@ -190,15 +280,20 @@ def main():
         print "Reduced dimensionality"
         Xm = reduce(Xm, Xs, d, nb, e)
         monb_test(Xm, Ym, c, False, nmsamples*len(labels) / 2)
+    elif cmd == "anomdet-test":
+        v = .1
+        d = 50
+        nb = 15
+        e = 100
+        X = reduce(Xm, Xs, d, nb, e)
+        anom_det_test(labels, X, Ym, v, nmsamples*len(labels) / 2)
+    elif cmd == "anomdet-crossvalidate":
+        v = 0.1
+        d = 50
+        nb = 15
+        e = 100
+        X = reduce(Xm, Xs, d, nb, e)
+        anom_det_crossvalidate(labels, X, Ym, v)
         
-
-
-    #print "Reduced dimensionality test"
-    #Xmnew = reduce(Xm, Xs, 50, 15, 100)
-    #classify(X, Y, testX, testY, True, 1.0)
-
-    #print "Original dimensionality"
-    #X, Y, testX, testY = select_test_set(Xm, Ym, 30*len(labels)/2)
-    #classify(X, Y, testX, testY, False, 1.0)
 
 main()

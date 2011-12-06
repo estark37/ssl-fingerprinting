@@ -5,7 +5,7 @@ from numpy import *
 import cmath
 
 def rbf(Xi, Xj):
-    beta = 0.0025
+    beta = 0.005
     norm = sum(map(lambda (xi, xj): (xi-xj)**2, zip(Xi, Xj)))
     return cmath.exp(-1*beta * norm).real
 
@@ -63,7 +63,7 @@ def AnomDet_fit(X, v, K = linK):
         h[i, 0] = 1.0/(v*n)
         A[0, i] = 1.0
 
-    solvers.options['maxiters'] = 500
+    solvers.options['show_progress'] = False
     sol = solvers.qp(cvxopt.matrix(P), cvxopt.matrix(q),
                      cvxopt.matrix(G), cvxopt.matrix(h),
                      cvxopt.matrix(A), cvxopt.matrix(b))
