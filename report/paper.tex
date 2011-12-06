@@ -49,10 +49,11 @@ generates. In practice, this small amount of information can
 be enough to determine the website that the user is visiting.
 
 This problem is naturally phrased as a supervised learning 
-problem. Given a set of packet traces, where each trace is labelled 
-with the website that a user visited to generate it, we would 
-like to determine the website that a user visited to generate a new, 
-unlabeled trace. The point of training such a classifier is not 
+problem. We train on a set of packet traces, where each trace is labelled 
+with the website that a user visited to generate it. Given a new,
+unlabeled trace, we would 
+like to determine the website that a user visited to generate this trace.
+ The point of training such a classifier is not 
 necessarily to make it easier for a censor to do its job, but rather 
 to understand the security guarantees that a user gets from using 
 an anonymizing proxy to forward encrypted web traffic, as well as 
@@ -101,9 +102,10 @@ I built a multiclass SVM using the Python \texttt{cvxopt} library~\cite{cvxopt}.
 open-world setting, I also built and trained a single-class SVM to perform 
 anomaly detection.
 \item \textbf{Designing and implementing a custom dimensionality reduction algorithm.} 
-Because \texttt{cvxopt} does not scale to very large problems, the feature vectors from the 
+Because \texttt{cvxopt} does not scale to very large problems~\cite{cvxoptscale}, the feature vectors from the 
 packet traces were too large to run on the multiclass and single-class SVMs that I built. 
-I designed a feature selection algorithm that uses data from website visits without the 
+I designed a feature selection algorithm (Section~\ref{sec:dimred}) similar to mutual information 
+that uses data from website visits without the 
 random-visit defense to select features for the data generated using the random-visit defense.
 \end{itemize}
 
@@ -259,7 +261,7 @@ limited computational resources.}
 \end{figure*}
 
 
-I implemented $k$-fold cross-validation to determine parameters of each SVM	, and also to verify to study how 
+I implemented $k$-fold cross-validation to determine parameters of each SVM, and also to study how 
 SVM performance changes as the amount of training data increases. Figure~\ref{fig:vary-visits} shows how the 
 one-vs-one multiclass SVM performance increases with the number of samples for each target site. As we expect,
 performance increases somewhat linearly with the amount of training data. Figure~\ref{fig:vary-labels} shows 
@@ -339,8 +341,8 @@ a separate anomaly detector to recognize visits to that site as positive events,
 would register as negative events, thereby enabling the detection of visits to target sites. Unfortunately, the single-class
 SVM proved to be of little utility in this setting. Because of \texttt{cvxopt}'s memory limitations, I could only run the 
 anomaly detector on dimensionality-reduced multi-visit data. As in the closed-world setting, I performed $k$-fold cross 
-validation to tune the parameters, but I unable to find a set of parameters for either a linear or RBF kernel that resulted 
-in a high true-positive/true-negative rate and a low false-positive/false-negative rate. In this application, a low true positive 
+validation to tune the parameters, but I was unable to find a set of parameters for either a linear or RBF kernel that resulted 
+in a high true-positive/true-negative rate and a low false-positive/false-negative rate. In this application, a low true-positive 
 rate might be acceptable if the false-positive rate is also low: a censoring entity probably does not want to disrupt a large 
 percentage of Internet traffic because it has registered as a false positive on an anomaly detector for a target site, but an 
 anomaly detector that allows a censor to discover a small percentage of target site visits without disrupting other traffic 
@@ -372,7 +374,7 @@ background site. To use this assumption, the algorithm ranks each packet in each
 this packet is to packets in similar positions in each of the single-visit feature vectors.
 
 The feature extraction algorithm is parameterized by $b$, a number of blocks, and $\epsilon$, a window around packet lengths.
-The algorithm is given as input a feature vector $x$, a matrix of single-visit vectors $X$, and a desired number of 
+The algorithm is given as input a multi-visit feature vector $x$, a matrix of single-visit vectors $X$, and a desired number of 
 features $n$. To produce a dimensionality-reduced version of $x$ with $n$ features, the algorithm does the following:
 \begin{enumerate}
 \item Divide $x$ into $b$ blocks.
@@ -380,18 +382,21 @@ features $n$. To produce a dimensionality-reduced version of $x$ with $n$ featur
 \begin{enumerate}
 \item $Score(p) \leftarrow 0$
 \item $i \leftarrow $ the index of the block that contains $p$
-\item For each vector $x \in X$:
+\item For each vector $x' \in X$:
 \begin{enumerate}
-\item $bx \leftarrow $ the packets in the $i^{th}$ block of $x$
-\item $Score(p) \leftarrow Score(p) + \frac{k}{m}$, where $k$ is the number of packets in $bx$ with the same direction as $p$ and with a length within $\epsilon$ of the length of $p$, and $m$ is the total number of packets in $bx$ with the same direction as $p$.
+\item Divide $x'$ into $b$ blocks.
+\item $bx' \leftarrow $ the packets in the $i^{th}$ block of $x'$
+\item $Score(p) \leftarrow Score(p) + \frac{k}{m}$, where $k$ is the number of packets in $bx'$ with the same direction as $p$ and with a length within $\epsilon$ of the length of $p$, and $m$ is the total number of packets in $bx'$ with the same direction as $p$.
 \end{enumerate}
 \end{enumerate}
-\item Return $x' \leftarrow $ the vector with a feature for the length and direction of each of the $n$ distinct highest scoring packets
+\item Return $x_{new} \leftarrow $ the vector with a feature for the length and direction of each of the $n$ distinct highest scoring packets
 \end{enumerate}
 
 In short, the algorithm scores each packet of each vector according to how similar it is to packets in the corresponding blocks of
 single-visit feature vectors. Different features are chosen for different vectors. The feature extraction depends only on the 
-single-visit data set, not on other multi-visit data points or on the labels.
+single-visit data set, not on other multi-visit data points or on the labels. This algorithm is akin to mutual information, except 
+that it operates on packets instead of individual features, and it compares each feature to features in similar regions of 
+single-visit feature vectors instead of to the corresponding feature in other multi-visit algorithms.
 
 In my implementation, I precomputed the numbers of packets with each length and direction in each block of each single-visit 
 feature vector, so that running the algorithm on all the multi-visit feature vectors didn't take more than a few seconds on my 
@@ -399,7 +404,8 @@ laptop.
 
 This algorithm seems to lead to good performance on multiclass SVMs, by picking out the few packet lengths/directions that 
 distinguish target site visits. I used $\epsilon=100$ and $b=15$, and found these parameters to work well enough.
- In future, I would like to understand more rigorously why this algorithm works, what good choices of parameters are,
+ In future, I would like to understand more rigorously why this algorithm works, what good choices of parameters are, how 
+ this algorithm is similar or dissimilar to mutual information,
   and if there are
 existing, well-studied alternatives that perform the same type of feature selection.
 
@@ -437,7 +443,7 @@ All original features & 36\% \\ \hline
 \section{Conclusions}
 
 In this project, I investigated the performance of several single- and multiclass SVMs on packet traces from visits to encrypted websites. 
-I found that the recently proposed random-visit defense against traffic analysis does not hold up, since a SVM with 
+I found that the recently proposed random-visit defense against traffic analysis does not hold up, since a SVM trained on 
 dimensionality-reduced multi-visit data can achieve up to $70\%$ accuracy against this defense. In the future, I would like to better 
 understand the feature extraction algorithm that I designed from a rigorous standpoint, and also study how to improve anomaly detection 
 for the open-world setting of the encrypted traffic analysis problem.
