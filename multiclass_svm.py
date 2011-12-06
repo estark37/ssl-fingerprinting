@@ -14,8 +14,6 @@ def SVM_classify(x, thetas, bs):
 def SVM_fit(xfile, Y, k, d, c = 1.0):
     n = len(Y) # number of samples
 
-    print "n: %d, d: %d, k: %d"%(n,d,k)
-
     # k = number of classes
 
     # The solver solves:
@@ -38,19 +36,13 @@ def SVM_fit(xfile, Y, k, d, c = 1.0):
     for i in range(0, k*(d+1)):
         P[i, i] = 1.0
 
-    print "Built P"
-
     q = zeros((k*(d+1) + n, 1))
     for i in range(n):
         q[k*(d+1) + i] = c
 
-    print "Built q"
-
     h = zeros((n*(n-1) + n, 1))
     for i in range(n*(n-1)):
         h[i, 0] = -1.0
-
-    print "Built h"
 
     f = open(xfile)
 
@@ -77,8 +69,7 @@ def SVM_fit(xfile, Y, k, d, c = 1.0):
         G[next_row, k*(d+1) + i] = -1.0
         next_row = next_row + 1
 
-    print "Built G"
-
+    solvers.options['show_progress'] = False
     sol = solvers.qp(cvxopt.matrix(P), cvxopt.matrix(q),
                      cvxopt.matrix(G),
                      cvxopt.matrix(h))

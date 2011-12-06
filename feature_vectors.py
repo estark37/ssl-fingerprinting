@@ -54,7 +54,23 @@ def select_cross_validation_subsets(X, Y, num_subsets):
         subsetsX.append(map(lambda x: X[x], subset))
         subsetsY.append(map(lambda y: Y[y], subset))
 
-    return subsetsX, subsetsY
+    # Each subset is the training set once
+    iters = []
+    for (i, x1) in enumerate(subsetsX):
+        # x1 is our testing set for this iteration
+        # all other subsets combined is our training set
+        testX = x1
+        testY = subsetsY[i]
+        trainX = []
+        trainY = []
+        for (j, x2) in enumerate(subsetsX):
+            if i != j:
+                trainX.extend(x2)
+                trainY.extend(subsetsY[j])
+        iters.append({"train": (trainX, trainY),
+                      "test": (testX, testY)})
+
+    return iters
 
 def select_test_set(X, Y, n_test):
     tests = sample(range(len(Y)), n_test)
