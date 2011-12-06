@@ -5,4 +5,4 @@
 > python run_one_v_one_svm.py data/feature_vectors/single_visits 30
 > python run_one_v_all_svm.py data/feature_vectors/single_visits 30
 
-> python run_pca.py data/feature_vectors/mult_visits 60 [monb|multiclass|anomdet]
+> python dim_reduction.py data/feature_vectors/single_visits data/feature_vectors/mult_visits 30 30 [multiclass-crossvalidate|multiclass-test|onevone-test|onevall-test]
