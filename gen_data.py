@@ -3,13 +3,6 @@ import os, sys, time
 import subprocess
 from random import choice, randint
 
-
-#sites = ["http://google.com", "http://www.facebook.com", "http://yahoo.com",
-#         "http://amazon.com", "http://wikipedia.org", "http://twitter.com", "http://ebay.com",
-#         "http://blogger.com", "http://craigslist.org", "http://linkedin.com", "http://live.com",
-#         "http://go.com", "http://msn.com", "http://bing.com", "http://espn.go.com", "http://cnn.com",
-#         "http://apple.com", "http://paypal.com", "http://aol.com"]
-
 sites = ["https://encrypted.google.com", "https://www.facebook.com", "https://twitter.com",
          "https://www.bankofamerica.com", "https://online.citibank.com", "https://www.box.net",
          "https://www.dropbox.com", "https://www.torproject.org"]
